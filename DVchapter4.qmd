@@ -1,0 +1,163 @@
+---
+title: "chapter4DV"
+format: html
+embedded resources: true 
+editor: visual
+---
+
+## Question 1 
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+tv_ratings <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/tv_ratings.csv")
+```
+
+```{r}
+glimpse(tv_ratings)
+```
+
+```{r}
+tv_long <- tv_ratings %>% 
+  group_by(title) %>% 
+  summarise(num_seasons = n()) %>% 
+  ungroup() %>% 
+  left_join(tv_ratings, by = "title") 
+
+tv_long <- tv_long %>% 
+  filter(num_seasons >= 5)
+```
+
+```{r}
+ggplot(tv_long,
+       mapping = aes(x = av_rating,
+                     y = seasonNumber,
+                     group = title)) +
+  geom_line() 
+```
+
+There are not really any conclusions to be drawn from this line plot, however there is a lot of data in between 7 to 9 in average rating.
+
+## Question 2 
+
+```{r}
+tv_long <- tv_ratings |>
+  group_by(title) |>
+  mutate(nseasons = max(seasonNumber)) |>
+filter(nseasons >= 5) |>
+  ungroup()
+
+ggplot(tv_long,
+       mapping = aes(x = av_rating,
+                     y = seasonNumber,
+                     group = title)) +
+  geom_line(alpha = .2) +
+  facet_wrap(~genres) +
+  theme_minimal()
+```
+
+The show that tends to last longer is action, crime, and drama.
+
+Ratings change as the show starts to get into later seasons. At first they are pretty stable but than as it gets to later seasons its starts to change a lot.
+
+The show on Drama, Family, Fantasy whose rating just plummeted is "Are You Afraid of the Dark"
+
+## Question 3 
+
+```{r}
+tv_ratings |>
+  filter(av_rating >= 9) 
+```
+
+```{r}
+tv_ratings |>
+  filter(av_rating >= 9) |>
+ggplot(tv_ratings,
+       mapping = aes(x = genres)) +
+  geom_bar() +
+  coord_flip()
+```
+
+The genre with the most top-rated show is Drama.
+
+## Question 4 
+
+```{r}
+comedies_dramas <- tv_ratings %>% 
+  mutate(is_comedy = if_else(str_detect(genres, "Comedy"), 
+                             1, 
+                             0)) %>% # If it contains the word comedy then 1, else 0
+  filter(is_comedy == 1 | genres == "Drama") %>% # Keep comedies and dramas
+  mutate(genres = if_else(genres == "Drama", # Make it so that we only have those two genres
+                          "Drama", 
+                          "Comedy"))
+
+glimpse(comedies_dramas)
+```
+
+```{r}
+comedies_dramas |>
+ggplot(tv_ratings,
+       mapping = aes(x = av_rating,
+                     fill = genres)) +
+  geom_density(alpha=.5)
+  
+```
+
+Your prediction that comedies should rival the best dramas is true. In fact there are higher rated comedies than dramas.
+
+## Question 5 
+
+```{r}
+comedies_dramas |>
+ggplot(tv_ratings,
+       mapping = aes(x = av_rating,
+                     fill = genres)) +
+  geom_histogram(alpha=.5)
+```
+
+The histogram gives us more direct information about how highly these genres are ranked. It shows that the comedies are actually a lot more highly rated.
+
+```{r}
+comedies_dramas |>
+ggplot(tv_ratings,
+       mapping = aes(x = av_rating,
+                     fill = genres)) +
+  geom_freqpoly()
+```
+
+I notice that it looks very similar to the histogram however it is just a line instead of direct numbers. I think of the three plots the second one was the most informative. The histogram gave exact numbers and showed how big of a difference in ratings there was between comedy and drama.
+
+## Question 6 
+
+```{r}
+comedies_dramas |>
+ggplot(tv_ratings,
+       mapping = aes(x = av_rating,
+                     y = share)) +
+  geom_bin_2d()
+```
+
+```{r}
+comedies_dramas |>
+ggplot(tv_ratings,
+       mapping = aes(x = av_rating,
+                     y = share)) +
+  geom_point()
+
+```
+
+I see that the majority of of average ratings occur between 7 and 9. In comparison to a scatter plot this shows it shows similar information. It shows where the points are clustered however the bin 2d gives a lot better way to show where the points are directly clustered in relation to the average ratings.
+
+```{r}
+comedies_dramas |>
+ggplot(tv_ratings,
+       mapping = aes(x = av_rating,
+                     y = share,
+                     fill = genres)) +
+  geom_bin_2d()
+```
+
+When we add genres to the fill aesthetic the pattern I see is that drama has a lot less shares compared to comedy that has higher shares for the most part. There was one big outlier in drama and that was Dekalog.
