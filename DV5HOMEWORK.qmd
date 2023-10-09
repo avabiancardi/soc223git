@@ -1,0 +1,150 @@
+---
+title: "DV 5 Homework"
+format: html
+embedded resources: true 
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+# Read in the data 
+wncaa <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/wncaa.csv")
+
+# Glimpse the data 
+glimpse(wncaa)
+```
+
+## Question 1
+
+```{r}
+wncaa |>
+  filter(tourney_finish == "Champ") 
+  
+```
+
+```{r}
+wncaa_new <- wncaa |>
+  filter(tourney_finish == "Champ") |>
+  group_by(school) |>
+  summarize(N = n()) |>
+  mutate(freq = N / sum(N))
+```
+
+```{r}
+ggplot(wncaa_new,
+      mapping = aes( x = school,
+                     y = freq)) + 
+    geom_bar(stat = "identity") +
+coord_flip()
+```
+
+The patterns that I see are that most schools are very similar in frequency ranging in between 0.0 and 0.1 except for two outliers. The two teams that have won the most are UConn and Tennessee.
+
+## Question 2
+
+```{r}
+champs <- wncaa |>
+  filter(tourney_finish == "Champ")
+
+champ_names <- unique(champs$school)
+
+winners <- wncaa %>% 
+  filter(school %in% champ_names)
+```
+
+```{r}
+winners <- winners %>% 
+  mutate(mean_seed = mean(seed),
+         .by = school)
+
+seed_plot <- ggplot(winners, aes(x = reorder(school, -mean_seed),
+                                 y = seed)) + 
+  geom_boxplot(outlier.shape = NA) + 
+  geom_jitter(alpha = 0.2) +
+  coord_flip() +
+  labs(title = "Seedings for Top All-Time WNCAA Teams",
+       x = "School",
+       y = "Seed")
+seed_plot
+```
+
+While looking at this graph it is very difficult to read the data. However, you can see that both sides Uconn and Tennessee have high seedings since they are the two top winners of all time.
+
+```{r}
+seed_plot_violin <- ggplot(winners, aes(x = reorder(school, mean_seed),
+                                 y = seed)) + 
+  geom_violin() + 
+  geom_jitter(alpha = 0.2) +
+  coord_flip() +
+  labs(title = "Seeds for Top All-Time WNCAA Teams",
+       x = "School",
+       y = "Seed")
+seed_plot_violin
+```
+
+I think that the visualization with the geom_violin was easier to read. I think the data is more evenly distributed making it easier to read where the points are displayed. The violin point is more flat compared to the box plot and to me is less scattered.
+
+## Question 3 
+
+```{r}
+seed_plot_point <- ggplot(winners, aes(x = reorder(school, -mean_seed),
+                                 y = seed)) + 
+  geom_point(alpha=0.2) +
+  coord_flip() +
+  labs(title = "Seeding for Top All-Time WNCAA Teams",
+       x = "School",
+       y = "Seed")
+seed_plot_point
+```
+
+Geom_point does not work well because we can't see how how many times a seed is in the data set for the school. The rankings are supposed to be a number but in this plot they are headed in dark to light. This makes it very difficult to understand how many seeds are in the data set.
+
+## Question 4 
+
+```{r}
+winners_mean_sd <- winners %>% 
+  group_by(school) %>% 
+  summarise(across(where(is.numeric),
+                   list(mean = mean,
+                        sd = sd)))
+
+win_percent_plot <- ggplot(winners_mean_sd, 
+                           aes(x = reorder(school, -seed_mean),
+                                 y = reg_percent_mean)) + 
+  geom_point() +
+  coord_flip() +
+  labs(title = "Average Win Percentage by School",
+       x = "School",
+       y = "Avg. Win %")
+win_percent_plot
+```
+
+The data in this set show that Uconn has a higher average in percentage than any other school. They only lose a very small percent of games that they play. Comparing this to Tennessee, who has won just as much as Uconn, has also lost a good amount. Texas A&M has the lowest average winning percentage. (73.98%)
+
+```{r}
+win_percent_plot_2 <- ggplot(winners_mean_sd, 
+                           aes(x = reorder(school, -seed_mean),
+                                 y = reg_percent_mean)) + 
+  geom_pointrange(mapping = aes(ymin = reg_percent_mean - reg_percent_sd, ymax = reg_percent_mean + reg_percent_sd)) +
+  coord_flip() +
+  labs(title = "Average Win Percentage by School",
+       x = "School",
+       y = "Avg. Win %")
+win_percent_plot_2
+```
+
+The school with the narrowest interval was Texas A&M. This means that their average win opercentage is very similar to to the all-time mean. It never gets too low or gets too high, the stay very close.
+
+```{r}
+win_percent_plot_3 <- ggplot(winners_mean_sd, 
+                           aes(x = reorder(school, -seed_mean),
+                                 y = reg_percent_mean)) + 
+  geom_linerange(mapping = aes(ymin = reg_percent_mean - reg_percent_sd, ymax = reg_percent_mean + reg_percent_sd)) +
+  coord_flip() +
+  labs(title = "Average Win Percentage by School",
+       x = "School",
+       y = "Avg. Win %")
+win_percent_plot_3
+```
+
+Yes, you can make the same plot using geom_line. Although it works I think that it is a bad idea because you still have to add a geom_point. With that being said, it would just be easier to use geom_point-range since there are less steps and it gets the same answer.
