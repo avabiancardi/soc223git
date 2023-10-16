@@ -1,0 +1,193 @@
+---
+title: "MD 5 HOMEWORK"
+format: html
+embed-resources: true
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+
+twitch_data <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/twitchdata-update.csv")
+```
+
+```{r}
+library(janitor)
+twitch_data <- clean_names(twitch_data)
+
+# Inspect new names
+colnames(twitch_data)
+```
+
+## Question 1
+
+```{r}
+sample_streamers <- twitch_data %>% sample_n(5)
+
+
+selected_info <- sample_streamers %>%
+  select(channel, average_viewers, followers)
+
+print(selected_info)
+```
+
+Something that I saw was that the more average viewers that you have, the more followers you also have. It is weird the amount of followers that they have considering how low the average view count is.
+
+```{r}
+summary_avg_viewers <- summary(twitch_data$`Average viewers`)
+summary_followers <- summary(twitch_data$Followers)
+
+print(summary_avg_viewers)
+print(summary_followers)
+```
+
+The numbers for both are higher than I thought they would be. There is a drastic range between the maximum and minimum for both of the average viewers.
+
+```{r}
+ggplot(twitch_data, 
+       aes(x = followers,
+           y = average_viewers)) +
+  geom_point(alpha = .4)
+```
+
+Towards the lower numbers of the followers and average viewers there is a lot of over-plotting.
+
+```{r}
+ggplot(twitch_data, aes(x = followers,
+                        y = average_viewers)) +
+  geom_point(alpha = .4) +
+  scale_x_log10(labels = scales::comma_format(scale = 1)) +
+  scale_y_log10(labels = scales::comma_format(scale = 1)) +
+  labs(x = "Followers (log scale)", y = "Average Viewers (log scale)")
+
+```
+
+Still, there is a lot of overplotting however it shows a better correlation between the higher followers and the higher average viewers.
+
+```{r}
+twitch_data <- twitch_data %>% 
+  mutate(log_viewers = log10(average_viewers), 
+         log_followers = log10(followers))
+```
+
+## Question 2
+
+```{r}
+fit1 <- lm(log_viewers ~ log_followers, data = twitch_data)
+
+```
+
+```{r}
+library(broom)
+tidy_summary <- tidy(fit1)
+```
+
+The coefficiant is .58
+
+1.1 \\ \^0.58 = 1.147
+
+What this is saying is that a 10 percent increase in followers is associated with around a 14.7 percent increase in the average number viewers.
+
+## Question 3
+
+```{r}
+library(broom)
+
+pred_data <- augment(fit1)
+
+glimpse(pred_data)
+```
+
+```{r}
+pred_data %>% 
+  ggplot(aes(x = log_followers, 
+             y = log_viewers)) +
+  geom_jitter(alpha = 0.4) + 
+  geom_line(aes(x = log_followers, 
+                y = .fitted), 
+            col = "orange") + 
+  theme_minimal() +
+  labs(subtitle = "Fitted Model and Raw Data", 
+       title = "Followers & Average Viewership", 
+       x = "log(followers)", 
+       y = "log(viewers)")
+```
+
+This graph shows the relationship good. The line doesn't stray into an weird patterns along the data.
+
+```{r}
+pred_data %>% 
+  ggplot(aes(x = log_followers, 
+             y = .resid)) +
+  geom_point(alpha = 0.4) + 
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  theme_minimal() +
+  labs(subtitle = "Residual Plot", 
+       title = "Residuals vs Log(Followers)", 
+       x = "log(followers)", 
+       y = "Residuals")
+```
+
+I notice a red dashed line that goes through the large sum of points at the 0 residual line. Along the x axis there are residuals in a horizontal pattern.
+
+## Question 4
+
+```{r}
+head(twitch_data[c("language", "average_viewers")])
+
+```
+
+```{r}
+summary_avg_viewers <- summary(twitch_data$`Average viewers`)
+
+summary_language <- summary(twitch_data$Language)
+
+print(summary_avg_viewers)
+print(summary_language)
+
+```
+
+```{r}
+ggplot(twitch_data, aes(x = language, y = average_viewers)) +
+  geom_boxplot() +
+  labs(x = "Language", y = "Average Viewers") +
+coord_flip()
+```
+
+## Question 5 
+
+```{r}
+twitch_data <- twitch_data %>% 
+  mutate(language = as.factor(language), 
+         language = relevel(language, ref = "English"))
+```
+
+```{r}
+fit_language <- lm(average_viewers ~ language,
+                   data = twitch_data)
+
+summary(fit_language)
+```
+
+The positive coefficients are Arabic, Russian, and Spanish. This means that it is relevant to the English streams also having a higher average viewing.
+
+## Question 6 
+
+```{r}
+residuals <- resid(fit_language)
+
+residual_data <- data.frame(
+  Language = factor(twitch_data$language), 
+  residuals = residuals
+)
+
+ggplot(residual_data, aes(x = Language, y = residuals)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(x = "Language", y = "Residuals") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = scales::comma_format(scale = 1))
+
+```
+
+English and Russian have the largest discrepancies between actual values and predicted values.
