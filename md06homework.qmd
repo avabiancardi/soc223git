@@ -1,0 +1,144 @@
+---
+title: "MD06 HOMEWORK"
+format: html
+embed-resources: true 
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+
+theme_set(theme_light())
+
+gender_employment <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/gender_employment.csv")
+
+glimpse(gender_employment)
+```
+
+```{r}
+gender_employment%>% 
+  ggplot(aes(x = year, y = wage_percent_of_male)) +
+  geom_jitter(alpha = 0.1) + 
+  geom_smooth(method = "lm") + 
+  labs(title = "Women's earnings with respect to men's", 
+       y = "% of Men's Income", 
+       x = "Year")
+```
+
+## Question 1
+
+```{r}
+gender_employment <- gender_employment %>% 
+  mutate(major_category = as.factor(major_category), 
+         major_category = relevel(major_category, ref = "Management, Business, and Financial"))
+```
+
+```{r}
+parallel_model <- lm(wage_percent_of_male ~ year + major_category,
+                     data = gender_employment)
+broom::tidy(parallel_model)
+
+```
+
+For sales and office in 2015 the wage percentage of male income was .192 of a percentage point.
+
+0.192\\\*2015 + -306.718 + 3.326 = 83.488%. This means the sales and offices occupations had 83.488 percent of male income
+
+For 2016, it is calculated by 0.192\\\*2016 + -306.718 + 6.077 = 86.431%. This means the service occupations had 86.431 percent of male income.
+
+## Question 2
+
+```{r}
+gender_employment%>% 
+  ggplot(aes(x = year,
+             y = wage_percent_of_male,
+             group = major_category)) +
+  geom_smooth(method = "lm",
+              se = FALSE) + 
+  labs(title = "Women's earnings with respect to men's", 
+       y = "% of Men's Income", 
+       x = "Year")
+```
+
+There is a lot of variation between the industry categories. I do not think that we can use the parallel trends assumption. It is not warranted.
+
+## Question 3
+
+```{r}
+interaction_model <- lm(wage_percent_of_male ~ year*major_category,
+                        data = gender_employment)
+broom::tidy(interaction_model)
+```
+
+In 2016 computer, engineering, and science's estimate would be
+
+\\\\hat{y} = -1370.4719187 + 0.7202561(2016) + 1002.8532317(1) - 0.4946783(2016)(1) = 87.14616
+
+The model estimated that in 2016 the computer, engineering and science jobs made 87.14 percent of male incomes. The estimate for service in 2016 would be
+
+\\\\hat{y} = -1370.4719187 + 0.7202561(2016) + 2137.6501474(1) - 1.0581075(2016)(1) = 86.06981
+
+It was estimated that the service jobs made 86.07 percent of male income.
+
+The difference between the two is that this requires 2 switches to be turned on for a model specific industry.
+
+## Question 4
+
+If there isn't a lot of data in the data set than the estimate of the interaction effects may not be reliable and they also may be high variables.
+
+## Question 5
+
+```{r}
+simple_fit <- lm(wage_percent_of_male ~ year,
+                 data = gender_employment)
+broom::tidy(simple_fit)
+```
+
+The male counterparts goes up .2 percentage of points every year.
+
+```{r}
+gender_employment %>% 
+  select(year, wage_percent_of_male, percent_female) %>% 
+  cor(use = "complete.obs")
+```
+
+The diagonals equal to 1 because there is a correlation when you compare the variable to itself.
+
+The estimated wage percent of male increases by about .24 percentage points per year.
+
+```{r}
+multiple_fit <- lm(wage_percent_of_male ~ year*percent_female,
+                   data = gender_employment)
+broom::tidy(multiple_fit)
+```
+
+The amount of women who work in a NA occupation grew by 10 percentage points per year.
+
+## Question 6
+
+R squared explains the variation amount of a dependent variable and is explained by the independent variable in a model. The closer R squared is closer to 1 which means the better your predictions are.
+
+```{r}
+simple_glanced <- broom::glance(simple_fit)
+simple_glanced$r.squared
+```
+
+```{r}
+multiple_glanced <- broom::glance(multiple_fit)
+multiple_glanced$r.squared
+```
+
+The R squared value is bigger for the multiple regression. For multiple regression, there is a bigger proportion for the dependent variable that goes off of the independent variables.
+
+```{r}
+random_numbers <- rnorm(n = nrow(gender_employment), 
+                        mean = 0, 
+                        sd = 4)
+```
+
+```{r}
+gender_employment$random_noise <- random_numbers
+
+# New model 
+random_fit <- lm(wage_percent_of_male ~ year + percent_female + random_noise, data = gender_employment)
+```
