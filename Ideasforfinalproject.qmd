@@ -1,0 +1,14 @@
+---
+title: "IDEAS FOR FINAL PROJECT"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Ideas For Final Project 
+
+**Artists with the most monthly listeners of all time on Spotify worldwide as of January 20**
+
+Maddie - NHL - which players are predicted to have most points in a season
+
+Sophie - Do university rankings affect the type of salary you get after you graduate.
