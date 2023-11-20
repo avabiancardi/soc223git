@@ -1,0 +1,176 @@
+---
+title: "MD8-9"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## 
+
+## Chapter 8 
+
+```{r}
+#| message: false
+library(tidyverse)
+library(here)
+library(moderndive)
+library(infer)
+theme_set(theme_minimal())
+```
+
+## Question 1 
+
+```{r}
+set.seed(1108)
+
+poll <- tibble(
+  vote_gop = rbinom(n = 1000,
+                    size = 1,
+                    prob = .53))
+```
+
+```{r}
+# Bootstrap resampling
+set.seed(1108)  # Setting seed for reproducibility
+bootstrap_dist <- poll %>%
+  rep_sample_n(size = nrow(poll), replace = TRUE, reps = 1000) %>%
+  group_by(replicate) %>%
+  summarize(mean_vote = mean(vote_gop))
+
+# Calculating 95% Confidence Interval
+ci_one_way <- quantile(bootstrap_dist$mean_vote, c(.025, .975))
+print(ci_one_way)
+```
+
+When I used the first method I was able to get a percentile bases confidence interval of 0.483975, 0.548000.
+
+```{r}
+# Infer approach
+set.seed(1108)  # Setting seed for reproducibility
+ci_second_way <- poll %>%
+  specify(response = vote_gop) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "mean") %>%
+  get_ci(level = 0.95, type = "percentile")
+
+print(ci_second_way)
+```
+
+When I used the second method I was able to get a percentile based confidence interval of 0.483975, 0.548.
+
+The two confidence intervals that I calculated were exactly the same. The reason that they are not the exact same when you don't set the same seed is because than the confidence levels will not have the same intervals. Setting different seeds makes the random generation to be different as well.
+
+## History of Rap 
+
+```{r}
+rap_poll <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/polls.csv")
+```
+
+```{r}
+top_songs <- rap_poll %>% 
+  filter(rank == 1)
+```
+
+## Question 2 
+
+```{r}
+years <- ggplot(top_songs,
+                aes(x = year)) +
+  geom_histogram(binwidth = 1,
+                 center = 0) +
+  labs(title = "Release Year of Critics' #1 Favorite Rap Songs",
+       x = "Release Year",
+       y = "Number of Songs")
+years
+```
+
+The year of the most commonly named favorite track in this critic poll is 1994. There were 14 critics who named a track from this year.
+
+## Question 3 
+
+```{r}
+set.seed(3)
+boot_d <- top_songs %>% 
+  specify(response = year) %>% 
+  generate(reps = 1000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+```
+
+```{r}
+confidence_interval <- boot_d %>% 
+  get_ci(level = 0.95, type = "percentile")
+print(confidence_interval)
+```
+
+The upper bound of this interval 1996 and the lower bound is 1993.
+
+## Question 4 
+
+```{r}
+set.seed(3)
+boot_d2 <- rap_poll %>% 
+  rep_sample_n(size = 25, reps = 1000, replace = TRUE) %>% 
+  group_by(replicate) %>% 
+  summarize(mean_year = mean(year))
+
+ci_25 <- quantile(boot_d2$mean_year, c(.025, .975))
+print(ci_25)
+```
+
+The width of the confidence interval compares to the width of the confidence level when using the full sample of 107 by completely making two different intervals. The lower bound was 1995 when the upper bound was 2002.
+
+## Chapter 9 
+
+```{r}
+pl_data <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/premier_league.csv")
+
+glimpse(pl_data)
+```
+
+## Question 5 
+
+```{r}
+home_wins <- pl_data %>% 
+  filter(result == "hw")
+
+home_wins_prop <- nrow(home_wins) / nrow(pl_data)
+
+print(home_wins_prop)
+```
+
+The proportion of home wins during the 2015/2016 season was 0.4131579. (41 percent)
+
+## Question 6  
+
+```{r}
+set.seed(22)
+
+sampled_proportions <- c()
+for (i in 1:1000) { sampled_results <- sample(c("aw", "hw" , "d"), 
+                            size = 380,
+                            replace = TRUE, 
+                            prob = c(1/3,1/3,1/3))
+  prop <- sum(sampled_results == "hw")/380
+  sampled_proportions[i] <- prop}
+proportions_df <- data.frame(Proportion = sampled_proportions)
+```
+
+```{r}
+proportions_graph <- ggplot(proportions_df,
+                            aes(x = Proportion)) + 
+  geom_histogram(binwidth = 0.01, boundary = 0.1, color = "white") +
+  labs(title = "Sample Proportions with Equal Probability Results",
+       x = "Proportion",
+       y = "Number of Proportions")
+proportions_graph
+```
+
+The histogram shows a pretty even distribution for the most part. Because of the large sample size, this means that the distribution will get closer to normal. In question 5, the proportion was so much higher than the sample proportions in question 6. A home win is typically more common than an away win so this data makes sense.
+
+## Question 7 
+
+In this scenario, the null hypothesis would be that the home/away teams don't really have a relation. Both teams have the same rate. The alternative hypothesis would be that home/away teams would win at different rates.
+
+## Question 8 
+
+A p-value in this example would mean that the home team is equal to or more than the proportion of home wins when the results rates are all equivalent and possible.
