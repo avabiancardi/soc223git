@@ -1,0 +1,332 @@
+---
+title: "Final Project"
+author: "Ava Biancardi"
+format: html
+embed-resources: true
+editor: visual
+echo: false 
+toc: false
+---
+
+Is there a greater value to being a left handed player or right handed player in hockey when it comes to the assists and goals being scored?
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(stargazer)
+
+NYR_22_23_points <- read_csv(file = "~/Desktop/AVA BIANCARDI SOC 223/NYR_22-23_points.csv")
+```
+
+## Introduction
+
+Being a New York resident all my life, the New York Rangers are a team that my family and I have followed since I can remember. Focusing on the most recent 2023 team, this study looks into if there is a relationship between being a left handed player or a right handed player.
+
+Using a data set from NHLstats.com that compiled information the 30 members of the 2023 New York Rangers Team. Last Updated a few months into 2023. This data focuses on the the members of the team and all the stats that they have recorded in there season. What this project is going to mainly focus on is the correlation between the stats recorded and what hand each player uses. Some of the notable columns in this data set are Hand, Goals, Assists, Face Off Wins, Shot Percentage and Games Played. This data set also includes some irrelevant columns that are not applicable to the prediction being made however they are still interesting to see. Some included are Penalty Infraction Minutes, Power Play Goals, Shorthand Goals, Overtime Goals, etc. These are irrelevant because they do not directly correlate with being a left handed or right handed player therefore this project is going to ignore those demonstrated stats.
+
+I do think that there is going to be a pattern in the correlation between which hand a player uses and the stats recorded. While something to consider is positions that are played in the game of hockey, I think that most of the stats will correlate with a specific hand. The studies throughout the project will allow me to understand if the data is linear or not.
+
+## 2. Exploratory Data Analysis
+
+```{r}
+names(NYR_22_23_points)[4] ="Hand"
+names(NYR_22_23_points)[7] ="Goals"
+names(NYR_22_23_points)[8] ="Assists"
+names(NYR_22_23_points)[9] ="Points"
+names(NYR_22_23_points)[6] ="`Games Played`"
+names(NYR_22_23_points)[15] ="`Power Play Goals`"
+names(NYR_22_23_points)[24] ="`Face Off Wins`"
+names(NYR_22_23_points)[19] ="`Overtime Goals`"
+```
+
+Above I changed some of the column names in the data set so that it would be easier to read and understand what the stats are.
+
+```{r}
+
+left_handed_data <- NYR_22_23_points %>%
+  filter(grepl("left", tolower(Hand)))
+
+right_handed_data <- NYR_22_23_points %>%
+  filter(grepl("right", tolower(Hand)))
+
+unique(NYR_22_23_points$Hand)
+
+left_handed_data <- NYR_22_23_points %>%
+  filter(Hand == "L")
+
+right_handed_data <- NYR_22_23_points %>%
+  filter(Hand == "R")
+
+left_handed_data <- NYR_22_23_points %>%
+  filter(Hand == "L")
+
+right_handed_data <- NYR_22_23_points %>%
+  filter(Hand == "R")
+
+# Display the new datasets
+print("Left-Handed Players:")
+print(left_handed_data)
+
+print("\nRight-Handed Players:")
+print(right_handed_data)
+
+```
+
+The three coding blocks below represent the summaries of the New York Rangers as a whole team, as right handed players and as left handed players.
+
+Table 1. Summary statistics of average New York Rangers 2023 Team for goals and assists.
+
+```{r}
+summary_data <- NYR_22_23_points %>% 
+  summarize(
+    max_goals = max(Goals),
+    min_goals = min(Goals),
+    mean_goals = mean(Goals),
+    median_goals = median(Goals),
+    max_assists = max(Assists),
+    min_assists = min(Assists),
+    mean_assists = mean(Assists),
+    median_asissts = median(Assists)
+  ) |>
+  knitr::kable()
+
+print(summary_data)
+```
+
+Table 2. Summary statistics of average right handed New York Rngers 2023 Team scores for goals and assists.
+
+```{r}
+summary_data <- right_handed_data %>% 
+  summarize(
+    max_goals = max(Goals),
+    min_goals = min(Goals),
+    mean_goals = mean(Goals),
+    median_goals = median(Goals),
+    max_assists = max(Assists),
+    min_assists = min(Assists),
+    mean_assists = mean(Assists),
+    median_asissts = median(Assists)
+  ) |>
+
+ knitr::kable()
+
+print(summary_data)
+```
+
+Table 3. Summary statistics of average left handed New York Rangers 2023 Team for goals and assists.
+
+```{r}
+summary_data <- left_handed_data %>% 
+  summarize(
+    max_goals = max(Goals),
+    min_goals = min(Goals),
+    mean_goals = mean(Goals),
+    median_goals = median(Goals),
+    max_assists = max(Assists),
+    min_assists = min(Assists),
+    mean_assists = mean(Assists),
+    median_asissts = median(Assists)
+  )|>
+
+ knitr::kable()
+
+print(summary_data)
+```
+
+Originally we had a sample size of 30 players (Table 1). However, once split up of there were 20 left handed players and 10 right handed players. The mean of the average goals scored was greatest for right handed players as the mean was 12.3. Where for left handed players the mean was 7.5 goals. For assists the greatest mean was also for right handed players as it was 25.8 and for left handed players it was 10.6.
+
+From what these summaries are showing, right handed players average more points from goals and assists compared to left handed players.
+
+Figure 2. Distribution of left and right handed goals throughout the team.
+
+```{r}
+ggplot(NYR_22_23_points, aes(x = Goals, fill = Hand)) +
+  geom_histogram(binwidth = 1, position = "dodge", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Goals by Handedness",
+       x = "Goals",
+       y = "Frequency",
+       fill = "Hand") +
+  theme_minimal()
+```
+
+Looking at the distribution of left and right handed goal on the New York Rangers, the frequency for a left handed player to have one or zero goals in a game is a lot higher than for a right handed player. Other than these two, most of the other frequencies are exactly the same or a left handed player occasionally scores more frequently. This is definitely something to consider throughout our analysis because it is not while it doesn't seem like it is too large of a difference, these minuscule differences can have a large effect on if being a lefty or righty is more valuable.
+
+Figure 3. Distribution of left and right handed goals throughout the team.
+
+```{r}
+ggplot(NYR_22_23_points, aes(x = Assists, fill = Hand)) +
+  geom_histogram(binwidth = 1, position = "dodge", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Assists by Handedness",
+       x = "Assists",
+       y = "Frequency",
+       fill = "Hand") +
+  theme_minimal() 
+```
+
+In this histogram, demonstrated is the distribution of left and right handed assists on the New York Rangers. Similar to goals, we see that there are a few outliers. there is a much higher frequency for 0 to 10 assists for left handed players than for right handed players. However as the assists go up we see that the left handed players don't have any recorded data. This means that right handed players are more frequently having over 40 assists in a season. This information is crucial to this project because it helps demonstrate that there is a significant difference between the amount of points a right handed player gets compared to a left handed player on this 2023 New York Rangers team.
+
+Figure 4. Scatter plot and correlation coefficient for left handed players
+
+```{r}
+correlation_coefficient <- cor(left_handed_data$Goals, left_handed_data$Assists, use = "complete.obs")
+
+
+ggplot(left_handed_data, aes(x = Goals, y = Assists)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +  # Add linear regression line
+  geom_text(aes(label = paste("Correlation =", round(correlation_coefficient, 2))),
+            x = max(left_handed_data$Goals),
+            y = min(left_handed_data$Assists),
+            hjust = 1, vjust = 0,
+            parse = TRUE) +  # Add correlation coefficient as text
+  labs(title = "Scatter Plot of Goals and Assists for Left Handed Players",
+       x = "Goals",
+       y = "Assists") +
+  theme_minimal()
+```
+
+This scatter plot displays the relationship between goals scored and assists made for the left handed players look to have a correlation of .66 percent. Furthermore, there appear to be some potential outliers. In particular, there is are many points that stray away from the line.
+
+Figure 5. Scatter plot and correlation coefficient for right handed players.
+
+```{r}
+correlation_coefficient <- cor(right_handed_data$Goals, right_handed_data$Assists, use = "complete.obs")
+
+
+ggplot(right_handed_data, aes(x = Goals, y = Assists)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +  # Add linear regression line
+  geom_text(aes(label = paste("Correlation =", round(correlation_coefficient, 2))),
+            x = max(right_handed_data$Goals),
+            y = min(right_handed_data$Assists),
+            hjust = 1, vjust = 0,
+            parse = TRUE) +  # Add correlation coefficient as text
+  labs(title = "Scatter Plot of Goals and Assists for Right Handed Players",
+       x = "Goals",
+       y = "Assists") +
+  theme_minimal()
+```
+
+This scatter plot displays the relationship between goals scored and assists made the right handed players look to have a correlation of .83 percent. This is above what the left handed players average. What this means is that they are more likely to have a goal from an assist. Furthermore, there appear to be some a few outliers but not too many. In particular, there are many points that align with the line.
+
+## 3. Multiple Linear Regression
+
+## 3.1 Methods
+
+The components of our multiple linear regression model are the following:
+
+-   Outcome variable = y
+
+-   Numerical explanatory variable = The goal and assist difference between left handed and right handed hockey players
+
+-   Categorical explanatory variable = left handed or right handed players
+
+    ## 3.2 Model Results
+
+```{r}
+model <- lm(Goals ~ Assists * factor(Hand), data = NYR_22_23_points)
+
+model_summary <- summary(model)
+
+print(model_summary$coefficients)
+```
+
+This regression table has an intercept that represents the estimated value of the response variable when all other predictors are zero. What this means is that the intercept is approximately 1.0003 with a standard error of 2.4396. The t-value of 0.4100 and the p-value of 0.6851 is suggesting that the intercept is not really too different from zero. The coefficient for Assists is estimated to be 0.6132, indicating that on average an increase in Assists is associated with an increase of 0.6132 in the response variable. This coefficient is very significant through this data because it should that by the t-value of 3.6484 there is a low p-value of 0.0012. Hand represents the difference in the intercept between left and right in this variable. The estimated difference is 0.2606, but the large standard error (4.1979) and high p-value of 0.9510 suggest that it is not statistically significant. Lastly, for assists, The estimated interaction effect is -0.1853, but the t-value of -0.9578 and the p-value of 0.3470 show that that this interaction effect is also not statistically significant. There is a significant positive positive effect for goals however for assists, there is not a big difference between hands.
+
+## 3.3 Interpreting the regression table
+
+The regression equation for assists is :
+
+Total Goals = Intercept + (Coefficient for Assists) × Assists
+
+Goals=1.0003+0.6132×Assists+0.2606×factor(Hand)R−0.1853×(Assists×factor(Hand)R)
+
+This equation allows you to estimate the expected number of goals for a given player based on their number of assists and which hand they use. The interpretation of the coefficients is essential. For example, the coefficient for Assists (0.6132) indicates the average change in Goals for a one-unit increase inAssists, holding other variables constant.
+
+To estimate the expected number of goals for a hypothetical player:
+
+-   Assists=10Assists=10: The player has 10 assists.
+
+-   factor(Hand)R=1factor(Hand)R=1: The player is right-handed.
+
+Plug these values into the equation:
+
+Goals=1.0003+0.6132×10+0.2606×1−0.1853×(10×1)Goals=1.0003+0.6132×10+0.2606×1−0.1853×(10×1)
+
+## 3.4 Inference for Multiple regression
+
+The inference that I am going to conduct is that if the p-value associated with 'Assists' is less than 0.05, you can conclude that the number of assists has a statistically significant effect on the number of goals.
+
+Goals=1.0003+0.6132×Assists+0.2606×factor(Hand)R−0.1853×(Assists×factor(Hand)R):
+
+The coefficient for Assists (0.6132) implies that, the average additional assist is associated with an increase of 0.6132 goals.
+
+The coefficient for 'factor(Hand)R' (0.2606) represents the difference in the intercept between right-handed and left-handed players.
+
+Null hypothesis (HO) for assists:
+
+H0​: The number of assists (�AssistsβAssists​) has no effect on the number of goals.
+
+This hypothesis tests whether the coefficient for Assists is equal to zero, implying that the variable Assists has no impact on the dependent variable Goals.
+
+Alternative hypothesis (H1)
+
+For hand:
+
+H1​: The interaction effect between 'Assists' and 'Hand' is equal to zero.
+
+This hypothesis tests whether the effect of Assists on Goals is the same for left and right-handed players.
+
+P-value from test statistics:
+
+The p-value for 'Assists' is 0.00120.0012, which is less than 0.05. This suggests that the 'Assists' variable is has a significant effect on Goals.
+
+The p-value for 'factor(Hand)R' is 0.95100.9510, which is greater than 0.05. This suggests that handedness doesn't have a significant effect on Goals.
+
+The p-value for 'Assists:factor(Hand)R' is 0.34700.3470, which is greater than 0.05. Meaning the interaction effect between Assists and Hand is not significant.
+
+## 3.5 Residual Analysis
+
+```{r}
+model <- lm(Goals ~ Assists, data = NYR_22_23_points)
+
+residuals <- residuals(model)
+
+plot(model$fitted.values, residuals, main = "Residuals vs Fitted Values", xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red", lty = 2)
+
+qqnorm(residuals)
+qqline(residuals)
+
+plot(model$fitted.values, sqrt(abs(residuals)), main = "Scale-Location Plot", xlab = "Fitted Values", ylab = "sqrt(|Residuals|)")
+
+plot(NYR_22_23_points$Assists, residuals, main = "Residuals vs Assists", xlab = "Assists", ylab = "Residuals")
+
+boxplot(residuals, main = "Box Plot of Residuals", ylab = "Residuals")
+```
+
+In my analysis for the residuals from a linear regression model, I was predicting if assists affect goals. There were multiple patterns shown through diagnostic plots.If there were noticible patterns apparent in the residuals versus fitted values plot, it means potential non-linearity. Curves in the relationship show the inbetween predictors and response variables. Heteroscedasticity, characterized by a variable spread of residuals across fitted values, violates the assumption of constant variance and may necessitate transformations. Outliers, singular data points significantly diverging from the overall trend, can impact model outcomes and merit investigation for accuracy. Influence points, represented by data points exerting a substantial impact on the model, may warrant scrutiny for their validity. Residuals demonstrating patterns against predictor variables indicate that there could be non-linear relationships or even missing certain predictor variables. In time series data, autocorrelation, manifested as patterns over time in residuals, suggests the need for time series modeling techniques. Looking at these patterns is extremely important for the model to have validity and reliability.
+
+## 4. Discussion
+
+## 4.1 Conclusions
+
+After completing the analysis on the New York Rangers 2023 Team, the data set shows that the number of assists significantly affects the prediction of goals in hockey games however depending on if a lefty or righty, the data can be effectd. As shown earlier in the project, righty players have higher mean goals and assists leading to the idea that a righty player on the New York Rangers is more valuable because of there more impressive stats. The regression modeling demonstrates a linear relationship between assists and total goals, with the coefficient for assists being significantly different from zero. What this suggests is when goals are scored,it is more commonly because there was an assist. The impact that assists and goals have is very positive because the more assists there are, the more goals there are. With this information we can prove that when assisted from a right handed player, it is more likely to be a goal than if it is a left handed player. The model proves statistical significance and shows how there is predictive power in explaining how goals are scored.
+
+I used a correlation coefficient by plotting a scatter plot. This graph was able to show the direct relation between goals and assists by right handed players as well as left handed players. Because there are many other factors that may influence a goal to be scored other than just which hand is used, future research may occur to predict other goal and assist enhancers,
+
+In conclusion, the data set allows this project to predict the stats of player performance through factors like hands, shots on goal, time on the ice, and many other contributors. Specifically through goals and assists we are able to understand how specific factors actually influence the outcome of a game through goals and assists. While this project only focuses on one team in 2023, there are multiple other teams that we can explore and learn to see if there are other outliers that may effect the player perforamce and value of a left handed player compared to a right handed player in the NHL.
+
+## 4.3 Further Questions
+
+If we were to continue researching the topic of left handed and right handed players affecting assists and goals in the NHL, I would be interested in researching further questions including
+
+1.  Do left-handed players or right handed players tend to play in specific positions? If yes, does this influence their goal-scoring and assist statistics?
+2.  Does the impact of which hand a player uses to score goals and have assists vary with player age or experience? How do younger players compare to more experienced players in terms of handedness and performance?
+3.  Do right-handed players tend to provide assists to other right-handed players more frequently than to left-handed players, and vice versa?
+4.  Are left-handed or right-handed players more prone to injuries? How do injuries impact their goal-scoring and assist statistics?
+5.  How does the hand the player uses impact assist patterns during power play situations? Are power play strategies influenced by the which hand the play maker uses?
+6.  Is there a significant difference in fan engagement and preferences for left-handed and right-handed players?
+7.  Does handedness influence a player's success in faceoffs?
+
+There are so many questions that can be asked about how left handed and right handed players can be differently valued in the game of hockey and if there really is a significant difference between what hand is being used when it comes to the goals and assists.
